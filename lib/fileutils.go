@@ -23,7 +23,7 @@ func (f *File) CreateFileIfNotExists(filePath string, fileName string) (fileSize
 	fileLocation := fmt.Sprintf("%s/%s", filePath, fileName)
 	file, err := os.Stat(fileLocation)
 	if os.IsNotExist(err) {
-		newFile, err := os.Create(filePath)
+		newFile, err := os.Create(fileLocation)
 		if err != nil {
 			return 0, err
 		}

@@ -1,0 +1,17 @@
+hash: 4d4384eda83776cbe855f520e95a89bc1fd35fe97d70ebb2c7820a79c8709cc6
+updated: 2018-08-12T00:38:08.626882+05:30
+imports:
+- name: github.com/golang/mock
+  version: c34cdb4725f4c3844d095133c6e40e448b86589b
+  subpackages:
+  - gomock
+- name: golang.org/x/net
+  version: c39426892332e1bb5ec0a434a079bf82f5d30c54
+  subpackages:
+  - context
+testImports:
+- name: github.com/stretchr/testify
+  version: f35b8ab0b5a2cef36673838d662e249dd9c94686
+  subpackages:
+  - assert
+  - mock

@@ -15,7 +15,17 @@ func (d *Downloader) DownloadFile(filePath string, url string) (error) {
 		return err
 	}
 
-	_, err = d.Client.Get(url, fileSize)
+	response, err := d.Client.Get(url, fileSize)
+	if err != nil {
+		return err
+	}
+
+	bytes, err := d.FileUtils.ConvertHTTPResponseToBytes(response)
+	if err != nil {
+		return err
+	}
+
+	err = d.FileUtils.AppendContent(filePath, bytes)
 	if err != nil {
 		return err
 	}

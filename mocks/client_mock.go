@@ -9,8 +9,8 @@ type MockClient struct {
 	mock.Mock
 }
 
-func (m *MockClient) NewHttpClient(url string) {
-	m.Called(url)
+func (m *MockClient) NewHttpClient(){
+	m.Called()
 	return
 }
 

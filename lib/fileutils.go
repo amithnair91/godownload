@@ -5,20 +5,25 @@ import (
 		"bufio"
 	"io/ioutil"
 	"net/http"
+	"strings"
+	"fmt"
 )
 
 type FileUtils interface {
-	CreateFileIfNotExists(filepath string) (filesize int64, err error)
+	CreateFileIfNotExists(filepath string, fileName string) (fileSize int64, err error)
 	AppendContent(filepath string, content []byte) (err error)
 	ConvertHTTPResponseToBytes(response *http.Response)(bytes []byte,err error)
+	GetFileNameFromURL(url string)(fileName string)
 }
 
 type File struct{}
 
-func (f *File) CreateFileIfNotExists(filepath string) (filesize int64, err error) {
-	file, err := os.Stat(filepath)
+func (f *File) CreateFileIfNotExists(filePath string, fileName string) (fileSize int64, err error) {
+	os.MkdirAll(filePath, os.ModePerm)
+	fileLocation := fmt.Sprintf("%s/%s", filePath, fileName)
+	file, err := os.Stat(fileLocation)
 	if os.IsNotExist(err) {
-		newFile, err := os.Create(filepath)
+		newFile, err := os.Create(filePath)
 		if err != nil {
 			return 0, err
 		}
@@ -42,4 +47,9 @@ func (f *File) AppendContent(filepath string, content []byte) (err error) {
 
 func (f *File) ConvertHTTPResponseToBytes(response *http.Response)(bytes []byte,err error) {
 	return ioutil.ReadAll(response.Body)
+}
+
+func (f *File) GetFileNameFromURL(url string)(fileName string) {
+		tokens := strings.Split(url, "/")
+		return tokens[len(tokens)-1]
 }

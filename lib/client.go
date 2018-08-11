@@ -6,7 +6,7 @@ import (
 )
 
 type Client interface {
-	NewHttpClient(url string)
+	NewHttpClient()
 	Get(url string, existingFileSize int64) (resp *http.Response, err error)
 }
 
@@ -14,7 +14,7 @@ type HTTPClient struct {
 	client *http.Client
 }
 
-func (c *HTTPClient) NewHttpClient(url string) () {
+func (c *HTTPClient) NewHttpClient() {
 	c.client = &http.Client{}
 }
 

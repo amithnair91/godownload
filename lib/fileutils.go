@@ -34,8 +34,11 @@ func (f *File) CreateFileIfNotExists(filePath string, fileName string) (fileSize
 }
 
 func (f *File) WriteToFile(response *http.Response, filePath string) error {
-	fo, _ := os.OpenFile(filePath, os.O_APPEND|os.O_WRONLY, os.ModeAppend)
-
+	fo, err := os.OpenFile(filePath, os.O_APPEND|os.O_WRONLY, os.ModeAppend)
+	if err != nil {
+		return err
+	}
+	defer fo.Close()
 	buf := make([]byte, 1024)
 	for {
 		// read a chunk

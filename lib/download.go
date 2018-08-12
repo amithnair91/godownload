@@ -20,6 +20,7 @@ func (d *Downloader) DownloadFile(filePath string, url string) (error) {
 	}
 
 	response, err := d.Client.Get(url, fileSize)
+	defer response.Body.Close()
 	if err != nil {
 		return err
 	}

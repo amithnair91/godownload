@@ -4,3 +4,6 @@ glide_install:
 fixfmt:
 			gofmt -w -l .
 
+test:
+			 go test ./...
+

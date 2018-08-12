@@ -38,10 +38,10 @@ func (f *File) CreateFileIfNotExists(filePath string, fileName string) (fileSize
 func (f *File) AppendContent(filepath string, content []byte) (err error) {
 	//could use O_CREATE to create file
 	fileHandle, err := os.OpenFile(filepath, os.O_APPEND|os.O_WRONLY, os.ModeAppend)
-	defer fileHandle.Close()
 	if err != nil {
 		return err
 	}
+	defer fileHandle.Close()
 
 	return binary.Write(fileHandle, binary.LittleEndian, content)
 }

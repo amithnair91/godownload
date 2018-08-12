@@ -12,7 +12,10 @@ type Downloader struct {
 }
 
 func (d *Downloader) DownloadFile(filePath string, url string) (error) {
-	fileName:= d.FileUtils.GetFileNameFromURL(url)
+	fileName, err := d.FileUtils.GetFileNameFromURL(url)
+	if err != nil {
+		return err
+	}
 
 	fileSize, err := d.FileUtils.CreateFileIfNotExists(filePath,fileName)
 	if err != nil {
@@ -20,10 +23,10 @@ func (d *Downloader) DownloadFile(filePath string, url string) (error) {
 	}
 
 	response, err := d.Client.Get(url, fileSize)
-	defer response.Body.Close()
 	if err != nil {
 		return err
 	}
+	defer response.Body.Close()
 
 	bytes, err := d.FileUtils.ConvertHTTPResponseToBytes(response)
 	if err != nil {

@@ -7,13 +7,14 @@ import (
 	"strings"
 	"fmt"
 	"encoding/binary"
+	"errors"
 )
 
 type FileUtils interface {
 	CreateFileIfNotExists(filepath string, fileName string) (fileSize int64, err error)
 	AppendContent(filepath string, content []byte) (err error)
 	ConvertHTTPResponseToBytes(response *http.Response) (bytes []byte, err error)
-	GetFileNameFromURL(url string) (fileName string)
+	GetFileNameFromURL(url string) (fileName string, err error)
 }
 
 type File struct{}
@@ -49,7 +50,10 @@ func (f *File) ConvertHTTPResponseToBytes(response *http.Response) (bytes []byte
 	return ioutil.ReadAll(response.Body)
 }
 
-func (f *File) GetFileNameFromURL(url string) (fileName string) {
+func (f *File) GetFileNameFromURL(url string) (fileName string, err error) {
+	if len(url) < 1 {
+		return "", errors.New("URL cannot be empty")
+	}
 	tokens := strings.Split(url, "/")
-	return tokens[len(tokens)-1]
+	return tokens[len(tokens)-1], nil
 }

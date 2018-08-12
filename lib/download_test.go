@@ -9,18 +9,43 @@ import (
 	"net/http"
 	"io/ioutil"
 	"bytes"
+	"fmt"
 )
 
-func TestDownloadFileFailsOnClientFailure(t *testing.T) {
+func setup(httpResponseStr string) (int64, string, string, string, string, []byte, *mocks.MockClient, *mocks.MockFileUtils, http.Response) {
 	fileSize := int64(0)
 	url := "www.someurl.com/file.txt"
 	filepath := "filepath"
 	fileName := "file.txt"
-	expectedError := "client failure"
-
+	absoluteFilePath := fmt.Sprintf("%s/%s", filepath, fileName)
+	expectedBytes := []byte(httpResponseStr)
 	mockHttpClient := &mocks.MockClient{}
 	mockFileUtils := &mocks.MockFileUtils{}
-	mockFileUtils.On("GetFileNameFromURL", url).Return(fileName)
+	httpResponse := http.Response{Body: ioutil.NopCloser(bytes.NewBufferString("File Content")),}
+	return fileSize, url, filepath, fileName, absoluteFilePath, expectedBytes, mockHttpClient, mockFileUtils, httpResponse
+}
+
+func TestDownloadFileFailsWhenURLIsEmpty(t *testing.T) {
+	_, _, filepath, _, _, _, mockHttpClient, mockFileUtils, _ := setup("File Content")
+	expectedError := "url cannot be empty"
+	url := ""
+	fileName := ""
+
+	mockFileUtils.On("GetFileNameFromURL", url).Return(fileName, errors.New(expectedError))
+
+	downloader := lib.Downloader{Client: mockHttpClient, FileUtils: mockFileUtils}
+
+	err := downloader.DownloadFile(filepath, url)
+	assert.Error(t, err)
+	assert.EqualError(t, err, expectedError)
+	mockFileUtils.Mock.AssertExpectations(t)
+}
+
+func TestDownloadFileFailsOnClientFailure(t *testing.T) {
+	fileSize, url, filepath, fileName, _, _, mockHttpClient, mockFileUtils, _ := setup("")
+	expectedError := "client failure"
+
+	mockFileUtils.On("GetFileNameFromURL", url).Return(fileName, nil)
 	mockFileUtils.On("CreateFileIfNotExists", filepath, fileName).Return(fileSize, nil)
 	mockHttpClient.On("Get", url, fileSize).Return(nil, errors.New(expectedError))
 	downloader := lib.Downloader{Client: mockHttpClient, FileUtils: mockFileUtils}
@@ -28,20 +53,16 @@ func TestDownloadFileFailsOnClientFailure(t *testing.T) {
 	err := downloader.DownloadFile(filepath, url)
 
 	assert.Error(t, err)
-	assert.EqualError(t, err, "client failure")
+	assert.EqualError(t, err, expectedError)
 	mockHttpClient.Mock.AssertExpectations(t)
 }
 
 func TestDownloadFileFailsWhenUnableToCreateFile(t *testing.T) {
-	fileSize := int64(0)
-	url := "www.someurl.com/file.txt"
-	filepath := "filepath"
-	fileName := "file.txt"
+	fileSize, url, filepath, fileName, _, _, mockHttpClient, mockFileUtils, _ := setup("")
 	expectedError := "file activity failure"
-	mockHttpClient := &mocks.MockClient{}
-	mockFileUtils := &mocks.MockFileUtils{}
+
+	mockFileUtils.On("GetFileNameFromURL", url).Return(fileName, nil)
 	mockFileUtils.On("CreateFileIfNotExists", filepath, fileName).Return(fileSize, errors.New(expectedError))
-	mockFileUtils.On("GetFileNameFromURL", url).Return(fileName)
 
 	downloader := lib.Downloader{Client: mockHttpClient, FileUtils: mockFileUtils}
 
@@ -52,19 +73,12 @@ func TestDownloadFileFailsWhenUnableToCreateFile(t *testing.T) {
 }
 
 func TestDownloadFileFailsWhenUnableToConvertResponseToBytes(t *testing.T) {
-	fileSize := int64(0)
-	url := "www.someurl.com/file.txt"
-	filepath := "filepath"
-	fileName := "file.txt"
+	fileSize, url, filepath, fileName, _, _, mockHttpClient, mockFileUtils, httpResponse := setup("File Content")
+	expectedError := "unable to unmarshall request"
 
-	mockHttpClient := &mocks.MockClient{}
-	mockFileUtils := &mocks.MockFileUtils{}
-	httpResponse := http.Response{Body: ioutil.NopCloser(bytes.NewBufferString("File Content")),}
-
-	mockFileUtils.On("GetFileNameFromURL", url).Return(fileName)
+	mockFileUtils.On("GetFileNameFromURL", url).Return(fileName, nil)
 	mockFileUtils.On("CreateFileIfNotExists", filepath, fileName).Return(fileSize, nil)
 	mockHttpClient.On("Get", url, fileSize).Return(&httpResponse, nil)
-	expectedError := "unable to unmarshall request"
 	mockFileUtils.On("ConvertHTTPResponseToBytes", &httpResponse).Return([]byte{}, errors.New(expectedError))
 
 	downloader := lib.Downloader{Client: mockHttpClient, FileUtils: mockFileUtils}
@@ -76,51 +90,19 @@ func TestDownloadFileFailsWhenUnableToConvertResponseToBytes(t *testing.T) {
 }
 
 func TestDownloadFileFailsWhenUnableToAppendToFile(t *testing.T) {
-	fileSize := int64(0)
-	url := "www.someurl.com/file.txt"
-	filepath := "filepath"
-	fileName := "file.txt"
-	expectedBytes := []byte("File Content")
+	fileSize, url, filepath, fileName, absoluteFilePath, expectedBytes, mockHttpClient, mockFileUtils, httpResponse := setup("File Content")
+	expectedError := "unable to append to file"
 
-	mockHttpClient := &mocks.MockClient{}
-	mockFileUtils := &mocks.MockFileUtils{}
-	httpResponse := http.Response{Body: ioutil.NopCloser(bytes.NewBufferString("File Content")),}
-
-	mockFileUtils.On("GetFileNameFromURL", url).Return(fileName)
+	mockFileUtils.On("GetFileNameFromURL", url).Return(fileName, nil)
 	mockFileUtils.On("CreateFileIfNotExists", filepath, fileName).Return(fileSize, nil)
 	mockHttpClient.On("Get", url, fileSize).Return(&httpResponse, nil)
-	expectedError := "unable to append to file"
 	mockFileUtils.On("ConvertHTTPResponseToBytes", &httpResponse).Return(expectedBytes, nil)
-	mockFileUtils.On("AppendContent", filepath, expectedBytes).Return(errors.New(expectedError))
+	mockFileUtils.On("AppendContent", absoluteFilePath, expectedBytes).Return(errors.New(expectedError))
 
 	downloader := lib.Downloader{Client: mockHttpClient, FileUtils: mockFileUtils}
 
 	err := downloader.DownloadFile(filepath, url)
 	assert.Error(t, err)
 	assert.EqualError(t, err, expectedError)
-	mockFileUtils.Mock.AssertExpectations(t)
-}
-
-func TestDownloadFileFailsWhenUnableToGetFileNameFromURL(t *testing.T) {
-	fileSize := int64(0)
-	url := "www.someurl.com/file.txt"
-	filepath := "filepath"
-	expectedBytes := []byte("unable to get filename from url")
-	fileName := "file.txt"
-
-	mockHttpClient := &mocks.MockClient{}
-	mockFileUtils := &mocks.MockFileUtils{}
-	httpResponse := http.Response{Body: ioutil.NopCloser(bytes.NewBufferString("File Content")),}
-
-	mockFileUtils.On("GetFileNameFromURL", url).Return(fileName)
-	mockFileUtils.On("CreateFileIfNotExists", filepath, fileName).Return(fileSize, nil)
-	mockHttpClient.On("Get", url, fileSize).Return(&httpResponse, nil)
-	mockFileUtils.On("ConvertHTTPResponseToBytes", &httpResponse).Return(expectedBytes, nil)
-	mockFileUtils.On("AppendContent", filepath, expectedBytes).Return(nil)
-
-	downloader := lib.Downloader{Client: mockHttpClient, FileUtils: mockFileUtils}
-
-	err := downloader.DownloadFile(filepath, url)
-	assert.NoError(t, err)
 	mockFileUtils.Mock.AssertExpectations(t)
 }

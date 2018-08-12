@@ -39,10 +39,13 @@ func (m *MockFileUtils)ConvertHTTPResponseToBytes(response *http.Response)(bytes
 	return
 }
 
-func (m *MockFileUtils) GetFileNameFromURL(url string)(fileName string){
+func (m *MockFileUtils) GetFileNameFromURL(url string)(fileName string, err error) {
 	args := m.Called(url)
 	if args.Get(0) != nil {
 		fileName = args.Get(0).(string)
+	}
+	if args.Get(1) != nil {
+		err = args.Get(1).(error)
 	}
 	return
 }

@@ -1,6 +1,8 @@
 package lib
 
-import "fmt"
+import (
+	"fmt"
+)
 
 type Download interface {
 	DownloadFile(filepath string, url string, client HTTPClient) error
@@ -16,6 +18,7 @@ func (d *Downloader) DownloadFile(filePath string, url string) error {
 	if err != nil {
 		return err
 	}
+	absoluteFilePath := fmt.Sprintf("%s/%s", filePath, fileName)
 
 	fileSize, err := d.FileUtils.CreateFileIfNotExists(filePath, fileName)
 	if err != nil {
@@ -28,13 +31,7 @@ func (d *Downloader) DownloadFile(filePath string, url string) error {
 	}
 	defer response.Body.Close()
 
-	bytes, err := d.FileUtils.ConvertHTTPResponseToBytes(response)
-	if err != nil {
-		return err
-	}
-
-	absoluteFilePath := fmt.Sprintf("%s/%s", filePath, fileName)
-	err = d.FileUtils.AppendContent(absoluteFilePath, bytes)
+	err = d.FileUtils.WriteToFile(response, absoluteFilePath)
 	if err != nil {
 		return err
 	}

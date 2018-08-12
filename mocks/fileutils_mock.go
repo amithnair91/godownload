@@ -20,25 +20,6 @@ func (m *MockFileUtils) CreateFileIfNotExists(filePath string, fileName string) 
 	return
 }
 
-func (m *MockFileUtils) AppendContent(filePath string, content []byte) (err error) {
-	args := m.Called(filePath, content)
-	if args.Get(0) != nil {
-		err = args.Get(0).(error)
-	}
-	return
-}
-
-func (m *MockFileUtils) ConvertHTTPResponseToBytes(response *http.Response) (bytes []byte, err error) {
-	args := m.Called(response)
-	if args.Get(0) != nil {
-		bytes = args.Get(0).([]byte)
-	}
-	if args.Get(1) != nil {
-		err = args.Get(1).(error)
-	}
-	return
-}
-
 func (m *MockFileUtils) GetFileNameFromURL(url string) (fileName string, err error) {
 	args := m.Called(url)
 	if args.Get(0) != nil {
@@ -46,6 +27,14 @@ func (m *MockFileUtils) GetFileNameFromURL(url string) (fileName string, err err
 	}
 	if args.Get(1) != nil {
 		err = args.Get(1).(error)
+	}
+	return
+}
+
+func (m *MockFileUtils) WriteToFile(response *http.Response, filePath string) (err error) {
+	args := m.Called(response, filePath)
+	if args.Get(0) != nil {
+		err = args.Get(0).(error)
 	}
 	return
 }

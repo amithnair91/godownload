@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"os"
 	"strings"
+
+	"github.com/schollz/progressbar"
 )
 
 type FileUtils interface {
@@ -39,7 +41,11 @@ func (f *File) WriteToFile(response *http.Response, filePath string) error {
 		return err
 	}
 	defer fo.Close()
-	buf := make([]byte, 1024)
+
+	chunkSize := 1024
+	buf := make([]byte, chunkSize)
+	bar := progressbar.New(int(response.ContentLength))
+
 	for {
 		// read a chunk
 		n, err := response.Body.Read(buf)
@@ -54,6 +60,7 @@ func (f *File) WriteToFile(response *http.Response, filePath string) error {
 		if _, err := fo.Write(buf[:n]); err != nil {
 			return err
 		}
+		bar.Add(chunkSize)
 	}
 	return nil
 }

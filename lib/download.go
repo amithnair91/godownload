@@ -7,7 +7,7 @@ type Download interface {
 }
 
 type Downloader struct {
-	Client Client
+	Client    Client
 	FileUtils FileUtils
 }
 
@@ -17,7 +17,7 @@ func (d *Downloader) DownloadFile(filePath string, url string) (error) {
 		return err
 	}
 
-	fileSize, err := d.FileUtils.CreateFileIfNotExists(filePath,fileName)
+	fileSize, err := d.FileUtils.CreateFileIfNotExists(filePath, fileName)
 	if err != nil {
 		return err
 	}

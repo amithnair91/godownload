@@ -9,13 +9,13 @@ type MockClient struct {
 	mock.Mock
 }
 
-func (m *MockClient) NewHttpClient(){
+func (m *MockClient) NewHttpClient() {
 	m.Called()
 	return
 }
 
 func (m *MockClient) Get(url string, existingFileSize int64) (resp *http.Response, err error) {
-	args := m.Called(url,existingFileSize)
+	args := m.Called(url, existingFileSize)
 
 	if args.Get(0) != nil {
 		resp = args.Get(0).(*http.Response)
@@ -25,4 +25,3 @@ func (m *MockClient) Get(url string, existingFileSize int64) (resp *http.Respons
 	}
 	return
 }
-

@@ -10,7 +10,7 @@ type MockFileUtils struct {
 }
 
 func (m *MockFileUtils) CreateFileIfNotExists(filePath string, fileName string) (filesize int64, err error) {
-	args := m.Called(filePath,fileName)
+	args := m.Called(filePath, fileName)
 	if args.Get(0) != nil {
 		filesize = args.Get(0).(int64)
 	}
@@ -21,14 +21,14 @@ func (m *MockFileUtils) CreateFileIfNotExists(filePath string, fileName string) 
 }
 
 func (m *MockFileUtils) AppendContent(filePath string, content []byte) (err error) {
-	args := m.Called(filePath,content)
+	args := m.Called(filePath, content)
 	if args.Get(0) != nil {
 		err = args.Get(0).(error)
 	}
 	return
 }
 
-func (m *MockFileUtils)ConvertHTTPResponseToBytes(response *http.Response)(bytes []byte,err error){
+func (m *MockFileUtils) ConvertHTTPResponseToBytes(response *http.Response) (bytes []byte, err error) {
 	args := m.Called(response)
 	if args.Get(0) != nil {
 		bytes = args.Get(0).([]byte)
@@ -39,7 +39,7 @@ func (m *MockFileUtils)ConvertHTTPResponseToBytes(response *http.Response)(bytes
 	return
 }
 
-func (m *MockFileUtils) GetFileNameFromURL(url string)(fileName string, err error) {
+func (m *MockFileUtils) GetFileNameFromURL(url string) (fileName string, err error) {
 	args := m.Called(url)
 	if args.Get(0) != nil {
 		fileName = args.Get(0).(string)

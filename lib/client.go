@@ -1,8 +1,8 @@
 package lib
 
 import (
-	"net/http"
 	"fmt"
+	"net/http"
 )
 
 type Client interface {
@@ -24,7 +24,7 @@ func (c *HTTPClient) Get(url string, existingFileSize int64) (resp *http.Respons
 	return c.client.Do(req)
 }
 
-func addRangeHeader(req *http.Request, rangeFrom int64) (*http.Request) {
+func addRangeHeader(req *http.Request, rangeFrom int64) *http.Request {
 	req.Header.Set("Range", fmt.Sprintf("bytes=%d-", rangeFrom))
 	return req
 }

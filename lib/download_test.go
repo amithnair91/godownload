@@ -1,15 +1,15 @@
 package lib_test
 
 import (
-	"testing"
-	"go-downloader/mocks"
-	"go-downloader/lib"
-	"github.com/stretchr/testify/assert"
-	"errors"
-	"net/http"
-	"io/ioutil"
 	"bytes"
+	"errors"
 	"fmt"
+	"github.com/stretchr/testify/assert"
+	"go-downloader/lib"
+	"go-downloader/mocks"
+	"io/ioutil"
+	"net/http"
+	"testing"
 )
 
 func setup(httpResponseStr string) (int64, string, string, string, string, []byte, *mocks.MockClient, *mocks.MockFileUtils, http.Response) {
@@ -21,7 +21,7 @@ func setup(httpResponseStr string) (int64, string, string, string, string, []byt
 	expectedBytes := []byte(httpResponseStr)
 	mockHttpClient := &mocks.MockClient{}
 	mockFileUtils := &mocks.MockFileUtils{}
-	httpResponse := http.Response{Body: ioutil.NopCloser(bytes.NewBufferString("File Content")),}
+	httpResponse := http.Response{Body: ioutil.NopCloser(bytes.NewBufferString("File Content"))}
 	return fileSize, url, filepath, fileName, absoluteFilePath, expectedBytes, mockHttpClient, mockFileUtils, httpResponse
 }
 

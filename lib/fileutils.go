@@ -1,13 +1,13 @@
 package lib
 
 import (
-	"os"
-	"io/ioutil"
-	"net/http"
-	"strings"
-	"fmt"
 	"encoding/binary"
 	"errors"
+	"fmt"
+	"io/ioutil"
+	"net/http"
+	"os"
+	"strings"
 )
 
 type FileUtils interface {

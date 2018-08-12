@@ -3,7 +3,7 @@ package lib
 import "fmt"
 
 type Download interface {
-	DownloadFile(filepath string, url string, client HTTPClient) (error)
+	DownloadFile(filepath string, url string, client HTTPClient) error
 }
 
 type Downloader struct {
@@ -11,7 +11,7 @@ type Downloader struct {
 	FileUtils FileUtils
 }
 
-func (d *Downloader) DownloadFile(filePath string, url string) (error) {
+func (d *Downloader) DownloadFile(filePath string, url string) error {
 	fileName, err := d.FileUtils.GetFileNameFromURL(url)
 	if err != nil {
 		return err
@@ -41,4 +41,3 @@ func (d *Downloader) DownloadFile(filePath string, url string) (error) {
 
 	return nil
 }
-

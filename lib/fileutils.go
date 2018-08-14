@@ -119,4 +119,3 @@ func (f *File) DeleteFile(filePath string) error {
 	err := os.Remove(filePath)
 	return err
 }
-

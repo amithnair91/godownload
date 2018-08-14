@@ -16,5 +16,4 @@ func main() {
 
 	println(fmt.Sprintf("%v", err))
 	println("Finished Downloading File")
-
 }

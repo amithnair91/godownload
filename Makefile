@@ -12,7 +12,9 @@ test:
 
 compile:
 	@echo "Building Binaries"
-	@go build -o=build/godownload app/main.go
+	@GOOS=darwin GOARCH=amd64 go build -o=build/godownload-darwin app/main.go
+	@GOOS=linux GOARCH=amd64 go build -o=build/godownload-linux app/main.go
+	@GOOS=windows GOARCH=amd64 go build -o=build/godownload-windows app/main.go
 
 build:	clean	compile	test
 

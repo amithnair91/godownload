@@ -3,6 +3,7 @@ package lib
 import (
 	"fmt"
 	"os"
+	"sync"
 )
 
 type Download interface {
@@ -53,29 +54,28 @@ func (d *Downloader) DownloadFileConcurrent(filePath string, url string, concurr
 	}
 
 	rangeList := populateRangeList(headResp.ContentLength, concurrency, 0)
-	var fileParts []string
+
+	filePartsChan := make(chan []string,1)
+	downloadErrChan := make(chan error,1)
+
+	filePartsChan <- []string{}
+	downloadErrChan <- nil
+
+	var wg sync.WaitGroup
+	wg.Add(len(rangeList))
 	// need to use go routines to make it concurrent
 	for index, rangeHeader := range rangeList {
-		absoluteFilePartPath := fmt.Sprintf("%s/%s-%d", filePath, fileName, index)
-		//delete if filepart exists
-		d.FileUtils.DeleteFile(absoluteFilePartPath)
-
-		filePartName := fmt.Sprintf("%s-%d", fileName, index)
-		_, err := d.FileUtils.CreateFileIfNotExists(filePath, filePartName)
-		if err != nil {
-			return err
-		}
-		fileParts = append(fileParts, absoluteFilePartPath)
-
-		response, err := d.Client.Get(url, rangeHeader)
-		if err != nil {
-			return err
-		}
-		err = d.FileUtils.WriteToFile(response, absoluteFilePartPath)
-		if err != nil {
-			return err
-		}
+		go download(&wg, downloadErrChan, filePartsChan, filePath, fileName, index, d, url, rangeHeader)
 	}
+
+	wg.Wait()
+
+	err = <-downloadErrChan
+	if err != nil {
+		return err
+	}
+
+	fileParts := <-filePartsChan
 
 	err = d.FileUtils.MergeFiles(fileParts, filePath, fileName)
 	if err != nil {
@@ -90,6 +90,43 @@ func (d *Downloader) DownloadFileConcurrent(filePath string, url string, concurr
 	}
 
 	return nil
+}
+
+func download(wg *sync.WaitGroup, downloadErr chan error, fileParts chan []string,
+	filePath string, fileName string, index int, d *Downloader, url string,
+	rangeHeader string) {
+	defer wg.Done()
+	err := <-downloadErr
+
+	if err != nil {
+		downloadErr <- err
+		return
+	}
+
+	parts := <- fileParts
+
+	absoluteFilePartPath := fmt.Sprintf("%s/%d-%s", filePath, index, fileName)
+	//delete if filepart exists
+	d.FileUtils.DeleteFile(absoluteFilePartPath)
+	filePartName := fmt.Sprintf("%d-%s", index,fileName)
+	_, err = d.FileUtils.CreateFileIfNotExists(filePath, filePartName)
+	if err != nil {
+		downloadErr <- err
+		return
+	}
+	parts = append(parts, absoluteFilePartPath)
+	response, err := d.Client.Get(url, rangeHeader)
+	if err != nil {
+		downloadErr <- err
+		return
+	}
+	err = d.FileUtils.WriteToFile(response, absoluteFilePartPath)
+	if err != nil {
+		downloadErr <- err
+		return
+	}
+	fileParts <- parts
+	downloadErr <- err
 }
 
 func populateRangeList(contentLength int64, concurrency int64, fileSize int64) []string {

@@ -48,7 +48,7 @@ func TestDownloadConcurrentSuccess(t *testing.T) {
 	var filePartNames []string
 	var i int
 	for i = 0; i < concurrency; i++ {
-		filePartNames = append(filePartNames, fmt.Sprintf("%v-%d", fileName, i))
+		filePartNames = append(filePartNames, fmt.Sprintf("%s-%d", fileName, i))
 	}
 
 	err = downloader.DownloadFileConcurrent(pwd, url, concurrency)

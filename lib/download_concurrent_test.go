@@ -14,25 +14,24 @@ import (
 	"net/http"
 )
 
-const concurrency = 2
+const concurrency = 1
 
-func setupConcurrent() (int64, string, string, string, string, string, *mocks.MockClient, *mocks.MockFileUtils, http.Response, string) {
+func setupConcurrent() (int64, string, string, string, string, *mocks.MockClient, *mocks.MockFileUtils, http.Response, string) {
 	fileSize := int64(0)
 	url := "www.someurl.com/file.txt"
 	filepath := "filepath"
 	fileName := "file.txt"
-	fileNamePart := fmt.Sprintf("%s-%d", fileName, 0)
-	absoluteFilePath := fmt.Sprintf("%s/%s", filepath, fileName)
-	absoluteFilePathPart := fmt.Sprintf("%s-%d", absoluteFilePath, 0)
+	fileNamePart := fmt.Sprintf("%d-%s", 0, fileName)
+	absoluteFilePathPart := fmt.Sprintf("%s/%d-%s", filepath,0, fileName)
 	mockHttpClient := &mocks.MockClient{}
 	mockFileUtils := &mocks.MockFileUtils{}
 	content := bytes.NewBufferString("File Contents")
 	httpResponse := http.Response{Body: ioutil.NopCloser(content), ContentLength: int64(content.Len())}
-	return fileSize, url, filepath, fileName, absoluteFilePath, absoluteFilePathPart, mockHttpClient, mockFileUtils, httpResponse, fileNamePart
+	return fileSize, url, filepath, fileName, absoluteFilePathPart, mockHttpClient, mockFileUtils, httpResponse, fileNamePart
 }
 
 func TestDownloadFileConcurrentFailsWhenURLIsEmpty(t *testing.T) {
-	_, _, filepath, _, _, _, mockHttpClient, mockFileUtils, _, _ := setupConcurrent()
+	_, _, filepath, _, _, mockHttpClient, mockFileUtils, _, _ := setupConcurrent()
 	expectedError := "url cannot be empty"
 	url := ""
 	fileName := ""
@@ -48,9 +47,8 @@ func TestDownloadFileConcurrentFailsWhenURLIsEmpty(t *testing.T) {
 }
 
 func TestDownloadFileConcurrentFailsWhenUnableToCreateFile(t *testing.T) {
-	fileSize, url, filepath, fileName, _, absoluteFilePathPart, mockHttpClient, mockFileUtils, httpResponse, _ := setupConcurrent()
+	fileSize, url, filepath, fileName, absoluteFilePathPart, mockHttpClient, mockFileUtils, httpResponse, fileNamePart := setupConcurrent()
 	expectedError := "file activity failure"
-	fileNamePart := fmt.Sprintf("%s-%d", fileName, 0)
 
 	mockFileUtils.On("GetFileNameFromURL", url).Return(fileName, nil)
 	mockHttpClient.On("Head", url).Return(&httpResponse, nil)
@@ -66,7 +64,7 @@ func TestDownloadFileConcurrentFailsWhenUnableToCreateFile(t *testing.T) {
 }
 
 func TestDownloadFileConcurrentFailsOnClientHeadRequestFailure(t *testing.T) {
-	fileSize, url, filepath, fileName, _, _, mockHttpClient, mockFileUtils, _, _ := setupConcurrent()
+	fileSize, url, filepath, fileName, _, mockHttpClient, mockFileUtils, _, _ := setupConcurrent()
 	expectedError := "client head request failure"
 
 	mockFileUtils.On("GetFileNameFromURL", url).Return(fileName, nil)
@@ -82,14 +80,14 @@ func TestDownloadFileConcurrentFailsOnClientHeadRequestFailure(t *testing.T) {
 }
 
 func TestDownloadFileConcurrentFailsOnClientGetRequestFailure(t *testing.T) {
-	fileSize, url, filepath, fileName, _, absoluteFilePathPart, mockHttpClient, mockFileUtils, httpResponse, fileNamePart := setupConcurrent()
+	fileSize, url, filepath, fileName, absoluteFilePathPart, mockHttpClient, mockFileUtils, httpResponse, fileNamePart := setupConcurrent()
 	expectedError := "client get request failure"
 
 	mockFileUtils.On("GetFileNameFromURL", url).Return(fileName, nil)
 	mockFileUtils.On("DeleteFile", absoluteFilePathPart).Return(errors.New("could not delete file as it does not exist"))
 	mockFileUtils.On("CreateFileIfNotExists", filepath, fileNamePart).Return(fileSize, nil)
 	mockHttpClient.On("Head", url).Return(&httpResponse, nil)
-	mockHttpClient.On("Get", url, "0-6").Return(nil, errors.New(expectedError))
+	mockHttpClient.On("Get", url, "0-13").Return(nil, errors.New(expectedError))
 	downloader := lib.Downloader{Client: mockHttpClient, FileUtils: mockFileUtils}
 
 	err := downloader.DownloadFileConcurrent(filepath, url, concurrency)
@@ -100,14 +98,14 @@ func TestDownloadFileConcurrentFailsOnClientGetRequestFailure(t *testing.T) {
 }
 
 func TestDownloadFileConcurrentFailsOnWriteToFileError(t *testing.T) {
-	fileSize, url, filepath, fileName, _, absoluteFilePathPart, mockHttpClient, mockFileUtils, httpResponse, fileNamePart := setupConcurrent()
+	fileSize, url, filepath, fileName, absoluteFilePathPart, mockHttpClient, mockFileUtils, httpResponse, fileNamePart := setupConcurrent()
 	expectedError := "unable to write to file"
 
 	mockFileUtils.On("GetFileNameFromURL", url).Return(fileName, nil)
 	mockFileUtils.On("DeleteFile", absoluteFilePathPart).Return(errors.New("could not delete file as it does not exist"))
 	mockFileUtils.On("CreateFileIfNotExists", filepath, fileNamePart).Return(fileSize, nil)
 	mockHttpClient.On("Head", url).Return(&httpResponse, nil)
-	mockHttpClient.On("Get", url, "0-6").Return(&httpResponse, nil)
+	mockHttpClient.On("Get", url, "0-13").Return(&httpResponse, nil)
 	mockFileUtils.On("WriteToFile", &httpResponse, absoluteFilePathPart).Return(errors.New(expectedError))
 
 	downloader := lib.Downloader{Client: mockHttpClient, FileUtils: mockFileUtils}
@@ -119,7 +117,7 @@ func TestDownloadFileConcurrentFailsOnWriteToFileError(t *testing.T) {
 }
 
 func TestDownloadFileConcurrentFailsOnMergeFileError(t *testing.T) {
-	fileSize, url, filepath, fileName, _, absoluteFilePathPart, mockHttpClient, mockFileUtils, httpResponse, fileNamePart := setupConcurrent()
+	fileSize, url, filepath, fileName, absoluteFilePathPart, mockHttpClient, mockFileUtils, httpResponse, fileNamePart := setupConcurrent()
 	expectedError := "unable to merge files"
 	mockFileUtils.On("GetFileNameFromURL", url).Return(fileName, nil)
 	mockFileUtils.On("DeleteFile", absoluteFilePathPart).Return(errors.New("could not delete file as it does not exist"))
@@ -138,7 +136,7 @@ func TestDownloadFileConcurrentFailsOnMergeFileError(t *testing.T) {
 }
 
 func TestDownloadFileConcurrentDoesNotFailOnDeleteFileError(t *testing.T) {
-	fileSize, url, filepath, fileName, _, absoluteFilePathPart, mockHttpClient, mockFileUtils, httpResponse, fileNamePart := setupConcurrent()
+	fileSize, url, filepath, fileName, absoluteFilePathPart, mockHttpClient, mockFileUtils, httpResponse, fileNamePart := setupConcurrent()
 	mockFileUtils.On("GetFileNameFromURL", url).Return(fileName, nil)
 	mockFileUtils.On("DeleteFile", absoluteFilePathPart).Return(errors.New("could not delete file as it does not exist"))
 	mockFileUtils.On("CreateFileIfNotExists", filepath, fileNamePart).Return(fileSize, nil)

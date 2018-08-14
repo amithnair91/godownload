@@ -53,6 +53,7 @@ func (d *Downloader) DownloadFileConcurrent(filePath string, url string, concurr
 
 	rangeList := populateRangeList(headResp.ContentLength, concurrency, 0)
 	var fileParts []string
+	// need to use go routines to make it concurrent
 	for index, rangeHeader := range rangeList {
 		_, err := d.FileUtils.CreateFileIfNotExists(filePath, fmt.Sprintf("%s-%d", fileName, index))
 		if err != nil {
@@ -71,7 +72,8 @@ func (d *Downloader) DownloadFileConcurrent(filePath string, url string, concurr
 		}
 	}
 
-	err = d.FileUtils.MergeFiles(fileParts, filePath)
+	destinationFilePath := fmt.Sprintf("%s/%s", filePath, fileName)
+	err = d.FileUtils.MergeFiles(fileParts, destinationFilePath)
 	if err != nil {
 		return err
 	}

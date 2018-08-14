@@ -121,7 +121,7 @@ func TestDownloadFileConcurrentFailsOnMergeFileError(t *testing.T) {
 	mockHttpClient.On("Head", url).Return(&httpResponse, nil)
 	mockHttpClient.On("Get", url, "0-13").Return(&httpResponse, nil)
 	mockFileUtils.On("WriteToFile", &httpResponse, absoluteFilePathPart).Return(nil)
-	mockFileUtils.On("MergeFiles", []string{absoluteFilePathPart}, filepath).Return(errors.New(expectedError))
+	mockFileUtils.On("MergeFiles", []string{absoluteFilePathPart}, absoluteFilePath).Return(errors.New(expectedError))
 
 	downloader := lib.Downloader{Client: mockHttpClient, FileUtils: mockFileUtils}
 

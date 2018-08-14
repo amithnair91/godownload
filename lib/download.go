@@ -45,7 +45,6 @@ func (d *Downloader) DownloadFileConcurrent(filePath string, url string, concurr
 	if err != nil {
 		return err
 	}
-	//absoluteFilePath := fmt.Sprintf("%s/%s", filePath, fileName)
 
 	fileSize, err := d.FileUtils.CreateFileIfNotExists(filePath, fileName)
 	if err != nil {
@@ -62,12 +61,18 @@ func (d *Downloader) DownloadFileConcurrent(filePath string, url string, concurr
 	println(fmt.Sprintf("%v",rangeList))
 
 
-	for _, rangeHeader := range rangeList {
-		resp, err := d.Client.Get(url, rangeHeader)
+	for index, rangeHeader := range rangeList {
+		absoluteFilePath := fmt.Sprintf("%s/%s-%d", filePath, fileName,index)
+
+		response, err := d.Client.Get(url, rangeHeader)
 		if err != nil {
 			return err
 		}
-		println(rangeHeader, resp)
+		err = d.FileUtils.WriteToFile(response, absoluteFilePath)
+		if err != nil {
+			return err
+		}
+		//println(rangeHeader, resp)
 	}
 
 	return nil

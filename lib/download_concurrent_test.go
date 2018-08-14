@@ -92,3 +92,21 @@ func TestDownloadFileConcurrentFailsOnClientGetRequestFailure(t *testing.T) {
 	assert.EqualError(t, err, expectedError)
 	mockHttpClient.Mock.AssertExpectations(t)
 }
+
+func TestDownloadFileConcurrentFailsOnWriteToFileError(t *testing.T) {
+	fileSize, url, filepath, fileName, absoluteFilePath, mockHttpClient, mockFileUtils, httpResponse := setup()
+	expectedError := "unable to write to file"
+	absoluteFilePathPart := fmt.Sprintf("%s-%d",absoluteFilePath,0)
+	mockFileUtils.On("GetFileNameFromURL", url).Return(fileName, nil)
+	mockFileUtils.On("CreateFileIfNotExists", filepath, fileName).Return(fileSize, nil)
+	mockHttpClient.On("Head", url).Return(&httpResponse, nil)
+	mockHttpClient.On("Get", url, "0-6").Return(&httpResponse, nil)
+	mockFileUtils.On("WriteToFile", &httpResponse, absoluteFilePathPart).Return(errors.New(expectedError))
+
+	downloader := lib.Downloader{Client: mockHttpClient, FileUtils: mockFileUtils}
+
+	err := downloader.DownloadFileConcurrent(filepath, url, concurrency)
+	assert.Error(t, err)
+	assert.EqualError(t, err, expectedError)
+	mockFileUtils.Mock.AssertExpectations(t)
+}

@@ -2,7 +2,8 @@ package lib
 
 import (
 	"fmt"
-)
+	"os"
+	)
 
 type Download interface {
 	DownloadFile(filepath string, url string) error
@@ -55,12 +56,17 @@ func (d *Downloader) DownloadFileConcurrent(filePath string, url string, concurr
 	var fileParts []string
 	// need to use go routines to make it concurrent
 	for index, rangeHeader := range rangeList {
-		_, err := d.FileUtils.CreateFileIfNotExists(filePath, fmt.Sprintf("%s-%d", fileName, index))
+		absoluteFilePartPath := fmt.Sprintf("%s/%s-%d", filePath, fileName, index)
+		//delete if filepart exists
+		d.FileUtils.DeleteFile(absoluteFilePartPath)
+
+		filePartName := fmt.Sprintf("%s-%d", fileName, index)
+		_, err := d.FileUtils.CreateFileIfNotExists(filePath, filePartName)
 		if err != nil {
 			return err
 		}
-		absoluteFilePartPath := fmt.Sprintf("%s/%s-%d", filePath, fileName, index)
 		fileParts = append(fileParts, absoluteFilePartPath)
+
 
 		response, err := d.Client.Get(url, rangeHeader)
 		if err != nil {
@@ -72,10 +78,16 @@ func (d *Downloader) DownloadFileConcurrent(filePath string, url string, concurr
 		}
 	}
 
-	destinationFilePath := fmt.Sprintf("%s/%s", filePath, fileName)
-	err = d.FileUtils.MergeFiles(fileParts, destinationFilePath)
+	err = d.FileUtils.MergeFiles(fileParts, filePath, fileName)
 	if err != nil {
 		return err
+	}
+
+	for _, filePartName := range fileParts {
+		err = os.Remove(filePartName)
+		if err != nil {
+			println("unable to remove filePart", filePartName)
+		}
 	}
 
 	return nil

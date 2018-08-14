@@ -45,13 +45,18 @@ func TestDownloadConcurrentSuccess(t *testing.T) {
 	client.NewHttpClient()
 	downloader := lib.Downloader{FileUtils: &file, Client: &client}
 
+	var filePartNames []string
+	var i int
+	for i = 0; i < concurrency; i ++ {
+		filePartNames = append(filePartNames,fmt.Sprintf("%v-%d",fileName,i))
+	}
+
 	err = downloader.DownloadFileConcurrent(pwd, url,concurrency)
 
 	assert.NoError(t, err)
 	assert.FileExists(t, filePath)
 
 	err = os.Remove(filePath)
-
 	assert.NoError(t, err)
 }
 

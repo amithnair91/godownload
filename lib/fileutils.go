@@ -9,13 +9,15 @@ import (
 	"strings"
 
 	"github.com/schollz/progressbar"
+			"bufio"
 )
 
 type FileUtils interface {
 	CreateFileIfNotExists(filepath string, fileName string) (fileSize int64, err error)
 	GetFileNameFromURL(url string) (fileName string, err error)
 	WriteToFile(response *http.Response, filePath string) error
-	MergeFiles(filePaths []string, destination string) error
+	MergeFiles(filePaths []string, destinationFilePath string, fileName string) error
+	DeleteFile(filePath string) (error)
 }
 
 type File struct{}
@@ -74,6 +76,47 @@ func (f *File) GetFileNameFromURL(url string) (fileName string, err error) {
 	return tokens[len(tokens)-1], nil
 }
 
-func (f *File) 	MergeFiles(filePaths []string, destination string) error {
+func (f *File) MergeFiles(filePaths []string, destinationFilePath string, fileName string) error {
+	_, err := f.CreateFileIfNotExists(destinationFilePath, fileName)
+	if err != nil {
+		return err
+	}
+
+	fileLocation := fmt.Sprintf("%s/%s", destinationFilePath, fileName)
+	fo, err := os.OpenFile(fileLocation, os.O_APPEND|os.O_WRONLY, os.ModeAppend)
+	if err != nil {
+		return err
+	}
+	defer fo.Close()
+
+	var count int
+
+	chunkSize := 1024
+	for _, filePath := range filePaths {
+		data, err := os.Open(filePath)
+		if err != nil {
+			return err
+		}
+		defer data.Close()
+
+		reader := bufio.NewReader(data)
+		part := make([]byte, chunkSize)
+
+		for {
+			if count, err = reader.Read(part); err != nil {
+				break
+			}
+			fo.Write(part[:count])
+		}
+		if err != io.EOF {
+			return errors.New(fmt.Sprintf("%s %s: %s", "Error Reading", filePath, err.Error()))
+		}
+	}
 	return nil
 }
+
+func (f *File)DeleteFile(filePath string) (error) {
+	err := os.Remove(filePath)
+	return err
+}
+

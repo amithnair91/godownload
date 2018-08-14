@@ -47,11 +47,11 @@ func TestDownloadConcurrentSuccess(t *testing.T) {
 
 	var filePartNames []string
 	var i int
-	for i = 0; i < concurrency; i ++ {
-		filePartNames = append(filePartNames,fmt.Sprintf("%v-%d",fileName,i))
+	for i = 0; i < concurrency; i++ {
+		filePartNames = append(filePartNames, fmt.Sprintf("%v-%d", fileName, i))
 	}
 
-	err = downloader.DownloadFileConcurrent(pwd, url,concurrency)
+	err = downloader.DownloadFileConcurrent(pwd, url, concurrency)
 
 	assert.NoError(t, err)
 	assert.FileExists(t, filePath)
@@ -59,4 +59,3 @@ func TestDownloadConcurrentSuccess(t *testing.T) {
 	err = os.Remove(filePath)
 	assert.NoError(t, err)
 }
-

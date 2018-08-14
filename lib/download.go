@@ -3,7 +3,7 @@ package lib
 import (
 	"fmt"
 	"os"
-	)
+)
 
 type Download interface {
 	DownloadFile(filepath string, url string) error
@@ -66,7 +66,6 @@ func (d *Downloader) DownloadFileConcurrent(filePath string, url string, concurr
 			return err
 		}
 		fileParts = append(fileParts, absoluteFilePartPath)
-
 
 		response, err := d.Client.Get(url, rangeHeader)
 		if err != nil {

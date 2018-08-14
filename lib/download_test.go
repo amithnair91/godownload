@@ -58,7 +58,7 @@ func TestDownloadFileFailsOnClientGetRequestFailure(t *testing.T) {
 }
 
 func TestDownloadFileFailsWhenUnableToCreateFile(t *testing.T) {
-	fileSize, url, filepath, fileName, _, mockHttpClient, mockFileUtils, _:= setup()
+	fileSize, url, filepath, fileName, _, mockHttpClient, mockFileUtils, _ := setup()
 	expectedError := "file activity failure"
 
 	mockFileUtils.On("GetFileNameFromURL", url).Return(fileName, nil)

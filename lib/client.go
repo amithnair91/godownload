@@ -37,11 +37,10 @@ func (c *HTTPClient) Get(url string, rangeHeader string) (resp *http.Response, e
 	return c.client.Do(req)
 }
 
-func addRangeHeaders(req *http.Request, rangeHeader string){
+func addRangeHeaders(req *http.Request, rangeHeader string) {
 	req.Header.Set("Range", fmt.Sprintf("bytes=%s", rangeHeader))
 }
 
 func addResumeRangeHeader(req *http.Request, rangeFrom int64) {
 	req.Header.Set("Range", fmt.Sprintf("bytes=%d-", rangeFrom))
 }
-

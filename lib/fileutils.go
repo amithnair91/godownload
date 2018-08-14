@@ -8,8 +8,8 @@ import (
 	"os"
 	"strings"
 
+	"bufio"
 	"github.com/schollz/progressbar"
-			"bufio"
 )
 
 type FileUtils interface {
@@ -17,7 +17,7 @@ type FileUtils interface {
 	GetFileNameFromURL(url string) (fileName string, err error)
 	WriteToFile(response *http.Response, filePath string) error
 	MergeFiles(filePaths []string, destinationFilePath string, fileName string) error
-	DeleteFile(filePath string) (error)
+	DeleteFile(filePath string) error
 }
 
 type File struct{}
@@ -115,7 +115,7 @@ func (f *File) MergeFiles(filePaths []string, destinationFilePath string, fileNa
 	return nil
 }
 
-func (f *File)DeleteFile(filePath string) (error) {
+func (f *File) DeleteFile(filePath string) error {
 	err := os.Remove(filePath)
 	return err
 }

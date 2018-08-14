@@ -7,3 +7,6 @@ fixfmt:
 test:
 			 go test ./...
 
+build:
+			 go build -o=build/go-downloader app/main.go
+

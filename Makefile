@@ -1,12 +1,24 @@
 glide_install:
-			glide install
+	@echo "Vendoring dependencies"
+	@glide install
 
 fixfmt:
-			gofmt -w -l .
+	@echo "Fixing format"
+	@gofmt -w -l .
 
 test:
-			 go test ./...
+	@echo "Running Tests"
+	@go test ./...
 
-build:
-			 go build -o=build/go-downloader app/main.go
+compile:
+	@echo "Building Binaries"
+	@go build -o=build/go-downloader app/main.go
+
+build:	clean	compile	test
+
+
+clean:
+	@echo "Removing existing builds"
+	@-rm -rf build
+
 

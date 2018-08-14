@@ -20,7 +20,8 @@ func setup() (int64, string, string, string, string, *mocks.MockClient, *mocks.M
 	absoluteFilePath := fmt.Sprintf("%s/%s", filepath, fileName)
 	mockHttpClient := &mocks.MockClient{}
 	mockFileUtils := &mocks.MockFileUtils{}
-	httpResponse := http.Response{Body: ioutil.NopCloser(bytes.NewBufferString("File Content"))}
+	content := bytes.NewBufferString("File Contents")
+	httpResponse := http.Response{Body: ioutil.NopCloser(content), ContentLength: int64(content.Len())}
 	return fileSize, url, filepath, fileName, absoluteFilePath, mockHttpClient, mockFileUtils, httpResponse
 }
 
@@ -40,13 +41,13 @@ func TestDownloadFileFailsWhenURLIsEmpty(t *testing.T) {
 	mockFileUtils.Mock.AssertExpectations(t)
 }
 
-func TestDownloadFileFailsOnClientFailure(t *testing.T) {
+func TestDownloadFileFailsOnClientGetRequestFailure(t *testing.T) {
 	fileSize, url, filepath, fileName, _, mockHttpClient, mockFileUtils, _ := setup()
 	expectedError := "client failure"
 
 	mockFileUtils.On("GetFileNameFromURL", url).Return(fileName, nil)
 	mockFileUtils.On("CreateFileIfNotExists", filepath, fileName).Return(fileSize, nil)
-	mockHttpClient.On("Get", url, fileSize).Return(nil, errors.New(expectedError))
+	mockHttpClient.On("ResumeGet", url, fileSize).Return(nil, errors.New(expectedError))
 	downloader := lib.Downloader{Client: mockHttpClient, FileUtils: mockFileUtils}
 
 	err := downloader.DownloadFile(filepath, url)
@@ -77,7 +78,7 @@ func TestDownloadFileFailsOnWriteToFileError(t *testing.T) {
 
 	mockFileUtils.On("GetFileNameFromURL", url).Return(fileName, nil)
 	mockFileUtils.On("CreateFileIfNotExists", filepath, fileName).Return(fileSize, nil)
-	mockHttpClient.On("Get", url, fileSize).Return(&httpResponse, nil)
+	mockHttpClient.On("ResumeGet", url, fileSize).Return(&httpResponse, nil)
 	mockFileUtils.On("WriteToFile", &httpResponse, absoluteFilePath).Return(errors.New(expectedError))
 
 	downloader := lib.Downloader{Client: mockHttpClient, FileUtils: mockFileUtils}

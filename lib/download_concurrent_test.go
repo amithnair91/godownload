@@ -22,7 +22,7 @@ func setupConcurrent() (int64, string, string, string, string, *mocks.MockClient
 	filepath := "filepath"
 	fileName := "file.txt"
 	fileNamePart := fmt.Sprintf("%d-%s", 0, fileName)
-	absoluteFilePathPart := fmt.Sprintf("%s/%d-%s", filepath,0, fileName)
+	absoluteFilePathPart := fmt.Sprintf("%s/%d-%s", filepath, 0, fileName)
 	mockHttpClient := &mocks.MockClient{}
 	mockFileUtils := &mocks.MockFileUtils{}
 	content := bytes.NewBufferString("File Contents")

@@ -55,8 +55,8 @@ func (d *Downloader) DownloadFileConcurrent(filePath string, url string, concurr
 
 	rangeList := populateRangeList(headResp.ContentLength, concurrency, 0)
 
-	filePartsChan := make(chan []string,1)
-	downloadErrChan := make(chan error,1)
+	filePartsChan := make(chan []string, 1)
+	downloadErrChan := make(chan error, 1)
 
 	filePartsChan <- []string{}
 	downloadErrChan <- nil
@@ -103,12 +103,12 @@ func download(wg *sync.WaitGroup, downloadErr chan error, fileParts chan []strin
 		return
 	}
 
-	parts := <- fileParts
+	parts := <-fileParts
 
 	absoluteFilePartPath := fmt.Sprintf("%s/%d-%s", filePath, index, fileName)
 	//delete if filepart exists
 	d.FileUtils.DeleteFile(absoluteFilePartPath)
-	filePartName := fmt.Sprintf("%d-%s", index,fileName)
+	filePartName := fmt.Sprintf("%d-%s", index, fileName)
 	_, err = d.FileUtils.CreateFileIfNotExists(filePath, filePartName)
 	if err != nil {
 		downloadErr <- err

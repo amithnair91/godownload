@@ -16,9 +16,10 @@ compile:
 
 build:	clean	compile	test
 
-
 clean:
 	@echo "Removing existing builds"
 	@-rm -rf build
 
+checkfmt:
+	@bash -c "diff -u <(echo -n) <(gofmt -d ./)"
 

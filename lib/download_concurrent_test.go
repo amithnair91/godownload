@@ -4,12 +4,12 @@ import (
 	"errors"
 	"testing"
 
-	"go-downloader/lib"
+	"godownload/lib"
 
 	"bytes"
 	"fmt"
 	"github.com/stretchr/testify/assert"
-	"go-downloader/mocks"
+	"godownload/mocks"
 	"io/ioutil"
 	"net/http"
 )

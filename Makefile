@@ -12,7 +12,7 @@ test:
 
 compile:
 	@echo "Building Binaries"
-	@go build -o=build/go-downloader app/main.go
+	@go build -o=build/godownload app/main.go
 
 build:	clean	compile	test
 

@@ -3,7 +3,7 @@ package lib_test
 import (
 	"fmt"
 	"github.com/stretchr/testify/assert"
-	"go-downloader/lib"
+	"godownload/lib"
 	"os"
 	"path/filepath"
 	"testing"

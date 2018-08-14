@@ -15,4 +15,4 @@ install:
 script:
 - diff -u <(echo -n) <(gofmt -d ./)
 - go test ./...
-- go build -o=build/go-downloader app/main.go
+- go build -o=build/godownload app/main.go

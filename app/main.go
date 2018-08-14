@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"go-downloader/lib"
+	"godownload/lib"
 )
 
 func main() {

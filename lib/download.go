@@ -3,6 +3,7 @@ package lib
 import (
 	"fmt"
 	"os"
+	"sort"
 	"sync"
 )
 
@@ -63,11 +64,9 @@ func (d *Downloader) DownloadFileConcurrent(filePath string, url string, concurr
 
 	var wg sync.WaitGroup
 	wg.Add(len(rangeList))
-	// need to use go routines to make it concurrent
 	for index, rangeHeader := range rangeList {
 		go download(&wg, downloadErrChan, filePartsChan, filePath, fileName, index, d, url, rangeHeader)
 	}
-
 	wg.Wait()
 
 	err = <-downloadErrChan
@@ -82,10 +81,11 @@ func (d *Downloader) DownloadFileConcurrent(filePath string, url string, concurr
 		return err
 	}
 
+	sort.Strings(fileParts)
 	for _, filePartName := range fileParts {
 		err = os.Remove(filePartName)
 		if err != nil {
-			println("unable to remove filePart", filePartName)
+			println("unable to remove filePart: ", filePartName)
 		}
 	}
 

@@ -51,7 +51,7 @@ func TestDownloadConcurrentSuccess(t *testing.T) {
 		filePartNames = append(filePartNames, fmt.Sprintf("%s-%d", fileName, i))
 	}
 
-	err = downloader.DownloadFileConcurrent(pwd, url, concurrency)
+	err = downloader.DownloadFileConcurrent(pwd, url, 6)
 
 	assert.NoError(t, err)
 	assert.FileExists(t, filePath)

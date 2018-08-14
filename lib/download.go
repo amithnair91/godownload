@@ -46,33 +46,34 @@ func (d *Downloader) DownloadFileConcurrent(filePath string, url string, concurr
 		return err
 	}
 
-	fileSize, err := d.FileUtils.CreateFileIfNotExists(filePath, fileName)
-	if err != nil {
-		return err
-	}
-
 	headResp, err := d.Client.Head(url)
 	if err != nil {
 		return err
 	}
 
-	rangeList := populateRangeList(headResp.ContentLength, concurrency, fileSize)
-
-	println(fmt.Sprintf("%v",rangeList))
-
-
+	rangeList := populateRangeList(headResp.ContentLength, concurrency, 0)
+	var fileParts []string
 	for index, rangeHeader := range rangeList {
-		absoluteFilePath := fmt.Sprintf("%s/%s-%d", filePath, fileName,index)
+		_, err := d.FileUtils.CreateFileIfNotExists(filePath, fmt.Sprintf("%s-%d", fileName, index))
+		if err != nil {
+			return err
+		}
+		absoluteFilePartPath := fmt.Sprintf("%s/%s-%d", filePath, fileName, index)
+		fileParts = append(fileParts, absoluteFilePartPath)
 
 		response, err := d.Client.Get(url, rangeHeader)
 		if err != nil {
 			return err
 		}
-		err = d.FileUtils.WriteToFile(response, absoluteFilePath)
+		err = d.FileUtils.WriteToFile(response, absoluteFilePartPath)
 		if err != nil {
 			return err
 		}
-		//println(rangeHeader, resp)
+	}
+
+	err = d.FileUtils.MergeFiles(fileParts, filePath)
+	if err != nil {
+		return err
 	}
 
 	return nil

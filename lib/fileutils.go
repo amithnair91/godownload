@@ -15,6 +15,7 @@ type FileUtils interface {
 	CreateFileIfNotExists(filepath string, fileName string) (fileSize int64, err error)
 	GetFileNameFromURL(url string) (fileName string, err error)
 	WriteToFile(response *http.Response, filePath string) error
+	MergeFiles(filePaths []string, destination string) error
 }
 
 type File struct{}
@@ -71,4 +72,8 @@ func (f *File) GetFileNameFromURL(url string) (fileName string, err error) {
 	}
 	tokens := strings.Split(url, "/")
 	return tokens[len(tokens)-1], nil
+}
+
+func (f *File) 	MergeFiles(filePaths []string, destination string) error {
+	return nil
 }

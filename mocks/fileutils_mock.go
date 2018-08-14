@@ -38,3 +38,11 @@ func (m *MockFileUtils) WriteToFile(response *http.Response, filePath string) (e
 	}
 	return
 }
+
+func (m *MockFileUtils) MergeFiles(filePaths []string, destination string) (err error) {
+	args := m.Called(filePaths, destination)
+	if args.Get(0) != nil {
+		err = args.Get(0).(error)
+	}
+	return
+}

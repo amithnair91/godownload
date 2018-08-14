@@ -1,17 +1,16 @@
 package lib_test
 
 import (
-	"errors"
-	"testing"
-
-	"godownload/lib"
-
 	"bytes"
+	"errors"
 	"fmt"
-	"github.com/stretchr/testify/assert"
-	"godownload/mocks"
 	"io/ioutil"
 	"net/http"
+	"testing"
+
+	"github.com/amithnair91/godownload/lib"
+	"github.com/amithnair91/godownload/mocks"
+	"github.com/stretchr/testify/assert"
 )
 
 const concurrency = 1

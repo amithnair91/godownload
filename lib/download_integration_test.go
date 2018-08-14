@@ -2,11 +2,12 @@ package lib_test
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/assert"
-	"godownload/lib"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/amithnair91/godownload/lib"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestDownloadSuccess(t *testing.T) {

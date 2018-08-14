@@ -4,12 +4,13 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/stretchr/testify/assert"
-	"godownload/lib"
-	"godownload/mocks"
 	"io/ioutil"
 	"net/http"
 	"testing"
+
+	"github.com/amithnair91/godownload/lib"
+	"github.com/amithnair91/godownload/mocks"
+	"github.com/stretchr/testify/assert"
 )
 
 func setup() (int64, string, string, string, string, *mocks.MockClient, *mocks.MockFileUtils, http.Response) {

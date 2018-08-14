@@ -3,6 +3,7 @@ package lib
 import (
 	"fmt"
 	"os"
+	"sync"
 )
 
 type Download interface {
@@ -53,36 +54,36 @@ func (d *Downloader) DownloadFileConcurrent(filePath string, url string, concurr
 	}
 
 	rangeList := populateRangeList(headResp.ContentLength, concurrency, 0)
-	var fileParts []string
+
+	fileParts := make(chan []string,1)
+	downloadErr := make(chan error,1)
+
+	fileParts <- []string{}
+	downloadErr <- nil
+
+	var wg sync.WaitGroup
+	wg.Add(len(rangeList))
 	// need to use go routines to make it concurrent
 	for index, rangeHeader := range rangeList {
-		absoluteFilePartPath := fmt.Sprintf("%s/%s-%d", filePath, fileName, index)
-		//delete if filepart exists
-		d.FileUtils.DeleteFile(absoluteFilePartPath)
-
-		filePartName := fmt.Sprintf("%s-%d", fileName, index)
-		_, err := d.FileUtils.CreateFileIfNotExists(filePath, filePartName)
-		if err != nil {
-			return err
-		}
-		fileParts = append(fileParts, absoluteFilePartPath)
-
-		response, err := d.Client.Get(url, rangeHeader)
-		if err != nil {
-			return err
-		}
-		err = d.FileUtils.WriteToFile(response, absoluteFilePartPath)
+		go download(wg, downloadErr, fileParts, filePath, fileName, index, d, url, rangeHeader)
 		if err != nil {
 			return err
 		}
 	}
 
-	err = d.FileUtils.MergeFiles(fileParts, filePath, fileName)
+	wg.Wait()
+
+	err = <- downloadErr
 	if err != nil {
 		return err
 	}
 
-	for _, filePartName := range fileParts {
+	err = d.FileUtils.MergeFiles(<- fileParts, filePath, fileName)
+	if err != nil {
+		return err
+	}
+
+	for _, filePartName := range <- fileParts {
 		err = os.Remove(filePartName)
 		if err != nil {
 			println("unable to remove filePart", filePartName)
@@ -90,6 +91,43 @@ func (d *Downloader) DownloadFileConcurrent(filePath string, url string, concurr
 	}
 
 	return nil
+}
+
+func download(wg sync.WaitGroup, downloadErr chan error, fileParts chan []string,
+	filePath string, fileName string, index int, d *Downloader, url string,
+	rangeHeader string) {
+		println("###### started go routing")
+	defer wg.Done()
+	err := <-downloadErr
+
+	if err != nil {
+		return
+	}
+
+	parts := <- fileParts
+
+	absoluteFilePartPath := fmt.Sprintf("%d-%s/%s", index, filePath, fileName)
+	//delete if filepart exists
+	d.FileUtils.DeleteFile(absoluteFilePartPath)
+	filePartName := fmt.Sprintf("%d-%s", index,fileName)
+	_, err = d.FileUtils.CreateFileIfNotExists(filePath, filePartName)
+	if err != nil {
+		downloadErr <- err
+		return
+	}
+	parts = append(parts, absoluteFilePartPath)
+	response, err := d.Client.Get(url, rangeHeader)
+	if err != nil {
+		downloadErr <- err
+		return
+	}
+	err = d.FileUtils.WriteToFile(response, absoluteFilePartPath)
+	if err != nil {
+		downloadErr <- err
+		return
+	}
+	fileParts <- parts
+	println("###### ended go routing")
 }
 
 func populateRangeList(contentLength int64, concurrency int64, fileSize int64) []string {

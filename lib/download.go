@@ -43,7 +43,7 @@ func (d *Downloader) DownloadFile(filePath string, url string) error {
 	return nil
 }
 
-func (d *Downloader) DownloadFileConcurrent(filePath string, url string, concurrency int64) error {
+func (d *Downloader) DownloadFileConcurrent(dirPath string, url string, concurrency int64) error {
 	fileName, err := d.FileUtils.GetFileNameFromURL(url)
 	if err != nil {
 		return err
@@ -56,32 +56,39 @@ func (d *Downloader) DownloadFileConcurrent(filePath string, url string, concurr
 
 	rangeList := populateRangeList(headResp.ContentLength, concurrency, 0)
 
-	filePartsChan := make(chan []string, 1)
-	downloadErrChan := make(chan error, 1)
+	//max value is concurrency + 1
+	noOfGoRoutines := len(rangeList)
 
-	filePartsChan <- []string{}
-	downloadErrChan <- nil
+	filePartChan := make(chan string, noOfGoRoutines)
+	downloadErrChan := make(chan error, noOfGoRoutines)
 
 	var wg sync.WaitGroup
-	wg.Add(len(rangeList))
+	wg.Add(noOfGoRoutines)
 	for index, rangeHeader := range rangeList {
-		go download(&wg, downloadErrChan, filePartsChan, filePath, fileName, index, d, url, rangeHeader)
+		go download(&wg, downloadErrChan, filePartChan, dirPath, fileName, index, d, url, rangeHeader)
 	}
 	wg.Wait()
 
-	err = <-downloadErrChan
-	if err != nil {
-		return err
+	close(downloadErrChan)
+	close(filePartChan)
+
+	for err = range downloadErrChan {
+		if err != nil {
+			return fmt.Errorf("unable to download filepart %v", err)
+		}
 	}
 
-	fileParts := <-filePartsChan
-
-	err = d.FileUtils.MergeFiles(fileParts, filePath, fileName)
-	if err != nil {
-		return err
+	var fileParts []string
+	for filePart := range filePartChan {
+		fileParts = append(fileParts, filePart)
 	}
 
 	sort.Strings(fileParts)
+	err = d.FileUtils.MergeFiles(fileParts, dirPath, fileName)
+	if err != nil {
+		return err
+	}
+
 	for _, filePartName := range fileParts {
 		err = os.Remove(filePartName)
 		if err != nil {
@@ -92,29 +99,20 @@ func (d *Downloader) DownloadFileConcurrent(filePath string, url string, concurr
 	return nil
 }
 
-func download(wg *sync.WaitGroup, downloadErr chan error, fileParts chan []string,
-	filePath string, fileName string, index int, d *Downloader, url string,
+func download(wg *sync.WaitGroup, downloadErr chan error, filePart chan string,
+	dirPath string, fileName string, index int, d *Downloader, url string,
 	rangeHeader string) {
 	defer wg.Done()
-	err := <-downloadErr
 
-	if err != nil {
-		downloadErr <- err
-		return
-	}
-
-	parts := <-fileParts
-
-	absoluteFilePartPath := fmt.Sprintf("%s/%d-%s", filePath, index, fileName)
+	absoluteFilePartPath := fmt.Sprintf("%s/%d-%s", dirPath, index, fileName)
 	//delete if filepart exists
 	d.FileUtils.DeleteFile(absoluteFilePartPath)
 	filePartName := fmt.Sprintf("%d-%s", index, fileName)
-	_, err = d.FileUtils.CreateFileIfNotExists(filePath, filePartName)
+	_, err := d.FileUtils.CreateFileIfNotExists(dirPath, filePartName)
 	if err != nil {
 		downloadErr <- err
 		return
 	}
-	parts = append(parts, absoluteFilePartPath)
 	response, err := d.Client.Get(url, rangeHeader)
 	if err != nil {
 		downloadErr <- err
@@ -125,7 +123,7 @@ func download(wg *sync.WaitGroup, downloadErr chan error, fileParts chan []strin
 		downloadErr <- err
 		return
 	}
-	fileParts <- parts
+	filePart <- absoluteFilePartPath
 	downloadErr <- err
 }
 

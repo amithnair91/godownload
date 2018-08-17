@@ -54,3 +54,11 @@ func (m *MockFileUtils) DeleteFile(filePath string) (err error) {
 	}
 	return
 }
+
+func (m *MockFileUtils) FileExists(path string) (exists bool) {
+	args := m.Called(path)
+	if args.Get(0) != nil {
+		exists = args.Get(0).(bool)
+	}
+	return
+}

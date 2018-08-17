@@ -49,6 +49,11 @@ func (d *Downloader) DownloadFileConcurrent(dirPath string, url string, concurre
 		return err
 	}
 
+	fileLocation := fmt.Sprintf("%s/%s", dirPath, fileName)
+	if d.FileUtils.FileExists(fileLocation) {
+		fileName = fmt.Sprintf("%s-(1)", fileName)
+	}
+
 	headResp, err := d.Client.Head(url)
 	if err != nil {
 		return err

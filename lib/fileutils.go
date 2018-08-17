@@ -18,6 +18,7 @@ type FileUtils interface {
 	WriteToFile(response *http.Response, filePath string) error
 	MergeFiles(filePaths []string, destinationFilePath string, fileName string) error
 	DeleteFile(filePath string) error
+	FileExists(path string) bool
 }
 
 type File struct{}
@@ -36,6 +37,13 @@ func (f *File) CreateFileIfNotExists(filePath string, fileName string) (fileSize
 	}
 
 	return file.Size(), nil
+}
+
+func (f *File) FileExists(path string) bool {
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return false
+	}
+	return true
 }
 
 func (f *File) WriteToFile(response *http.Response, filePath string) error {

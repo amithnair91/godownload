@@ -47,18 +47,19 @@ func TestDownloadFileConcurrentFailsWhenURLIsEmpty(t *testing.T) {
 
 func TestDownloadFileConcurrentFailsWhenUnableToCreateFile(t *testing.T) {
 	fileSize, url, filepath, fileName, absoluteFilePathPart, mockHttpClient, mockFileUtils, httpResponse, fileNamePart := setupConcurrent()
-	expectedError := "file activity failure"
+	createFileError := errors.New("file activity failure")
+	expectedError := fmt.Errorf("unable to download filepart %v", createFileError)
 
 	mockFileUtils.On("GetFileNameFromURL", url).Return(fileName, nil)
 	mockHttpClient.On("Head", url).Return(&httpResponse, nil)
-	mockFileUtils.On("DeleteFile", absoluteFilePathPart).Return(errors.New("could not delete file as it does not exist"))
-	mockFileUtils.On("CreateFileIfNotExists", filepath, fileNamePart).Return(fileSize, errors.New(expectedError))
+	mockFileUtils.On("DeleteFile", absoluteFilePathPart).Return(nil)
+	mockFileUtils.On("CreateFileIfNotExists", filepath, fileNamePart).Return(fileSize, createFileError)
 
 	downloader := lib.Downloader{Client: mockHttpClient, FileUtils: mockFileUtils}
 
 	err := downloader.DownloadFileConcurrent(filepath, url, concurrency)
 	assert.Error(t, err)
-	assert.EqualError(t, err, expectedError)
+	assert.EqualError(t, err, expectedError.Error())
 	mockFileUtils.Mock.AssertExpectations(t)
 }
 
@@ -80,38 +81,40 @@ func TestDownloadFileConcurrentFailsOnClientHeadRequestFailure(t *testing.T) {
 
 func TestDownloadFileConcurrentFailsOnClientGetRequestFailure(t *testing.T) {
 	fileSize, url, filepath, fileName, absoluteFilePathPart, mockHttpClient, mockFileUtils, httpResponse, fileNamePart := setupConcurrent()
-	expectedError := "client get request failure"
+	clientError := errors.New("client get request failure")
+	expectedError := fmt.Errorf("unable to download filepart %v", clientError)
 
 	mockFileUtils.On("GetFileNameFromURL", url).Return(fileName, nil)
-	mockFileUtils.On("DeleteFile", absoluteFilePathPart).Return(errors.New("could not delete file as it does not exist"))
+	mockFileUtils.On("DeleteFile", absoluteFilePathPart).Return(nil)
 	mockFileUtils.On("CreateFileIfNotExists", filepath, fileNamePart).Return(fileSize, nil)
 	mockHttpClient.On("Head", url).Return(&httpResponse, nil)
-	mockHttpClient.On("Get", url, "0-13").Return(nil, errors.New(expectedError))
+	mockHttpClient.On("Get", url, "0-13").Return(nil, clientError)
 	downloader := lib.Downloader{Client: mockHttpClient, FileUtils: mockFileUtils}
 
 	err := downloader.DownloadFileConcurrent(filepath, url, concurrency)
 
 	assert.Error(t, err)
-	assert.EqualError(t, err, expectedError)
+	assert.EqualError(t, err, expectedError.Error())
 	mockHttpClient.Mock.AssertExpectations(t)
 }
 
 func TestDownloadFileConcurrentFailsOnWriteToFileError(t *testing.T) {
 	fileSize, url, filepath, fileName, absoluteFilePathPart, mockHttpClient, mockFileUtils, httpResponse, fileNamePart := setupConcurrent()
-	expectedError := "unable to write to file"
+	writeToFileError := errors.New("unable to write to file")
+	expectedError := fmt.Errorf("unable to download filepart %v", writeToFileError)
 
 	mockFileUtils.On("GetFileNameFromURL", url).Return(fileName, nil)
-	mockFileUtils.On("DeleteFile", absoluteFilePathPart).Return(errors.New("could not delete file as it does not exist"))
+	mockFileUtils.On("DeleteFile", absoluteFilePathPart).Return(nil)
 	mockFileUtils.On("CreateFileIfNotExists", filepath, fileNamePart).Return(fileSize, nil)
 	mockHttpClient.On("Head", url).Return(&httpResponse, nil)
 	mockHttpClient.On("Get", url, "0-13").Return(&httpResponse, nil)
-	mockFileUtils.On("WriteToFile", &httpResponse, absoluteFilePathPart).Return(errors.New(expectedError))
+	mockFileUtils.On("WriteToFile", &httpResponse, absoluteFilePathPart).Return(writeToFileError)
 
 	downloader := lib.Downloader{Client: mockHttpClient, FileUtils: mockFileUtils}
 
 	err := downloader.DownloadFileConcurrent(filepath, url, concurrency)
 	assert.Error(t, err)
-	assert.EqualError(t, err, expectedError)
+	assert.EqualError(t, err, expectedError.Error())
 	mockFileUtils.Mock.AssertExpectations(t)
 }
 
